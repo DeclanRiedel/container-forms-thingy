@@ -1,0 +1,84 @@
+﻿@page "/history"
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+@using ContainerInspectionApp.Services
+@using ContainerInspectionApp.Models
+@using ContainerInspectionApp.Validators
+@inherits BasePage
+@inject IDialogService DialogService
+
+<PageTitle>Container History</PageTitle>
+<MudText Typo="Typo.h3" GutterBottom="true">Container History</MudText>
+
+@if (!_isDatabaseConnected)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_connectionError</MudAlert>
+}
+else if (containers == null || containers.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">The database is empty. No containers to display.</MudAlert>
+}
+else
+{
+    <MudTextField @bind-Value="searchString" Placeholder="Search by Container ID" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0 mb-4"></MudTextField>
+
+    <MudTable Items="@containers" Hover="true" Striped="true" Dense="true" Filter="FilterFunc">
+        <HeaderContent>
+            <MudTh>ID</MudTh>
+            <MudTh>Container ID</MudTh>
+            <MudTh>Container Type</MudTh>
+            <MudTh>Is Damaged</MudTh>
+            <MudTh>Time Added</MudTh>
+            <MudTh Style="text-align: center;">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ID">@context.Id</MudTd>
+            <MudTd DataLabel="Container ID">@context.ContainerId</MudTd>
+            <MudTd DataLabel="Container Type">@context.ContainerType</MudTd>
+            <MudTd DataLabel="Is Damaged">@(context.IsDamaged ? "Yes" : "No")</MudTd>
+            <MudTd DataLabel="Time Added">@context.TimeAdded.ToString("g")</MudTd>
+            <MudTd Style="text-align: center;">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenContainerDetails(context))">Extra Info</MudButton>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private List<Container> containers = new List<Container>();
+    private string searchString = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (_isDatabaseConnected)
+        {
+            await LoadContainers();
+        }
+    }
+
+    private async Task LoadContainers()
+    {
+        containers = await ContainerTableOperations.GetAllContainers();
+    }
+
+    private bool FilterFunc(Container container)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        return container.ContainerId.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void OpenContainerDetails(Container container)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Container", container }
+        };
+
+        DialogService.Show<ContainerDetailsDialog>("Container Details", parameters);
+    }
+}
