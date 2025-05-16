@@ -7,7 +7,8 @@ Small blazor project to record container info on a postgres database.
 
 
 
-## Connection string excluded 
+## Connection string excluded (appsettings.json)
+
  "ConnectionStrings": {
     "container-forms": "Host=localhost; Port=; Database=; Username=; Password=;",
     "valid-users": "Host=localhost; Port=; Database=; Username=; Password=;"
